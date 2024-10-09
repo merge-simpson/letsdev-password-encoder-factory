@@ -11,7 +11,8 @@
 
 ## Installation
 
-`build.gradle.kts`에서 다음과 같이 추가합니다. (또는 번들된 의존성을 각각 추가할 수 있습니다.)
+`build.gradle.kts`에서 다음과 같이 추가합니다.
+(또는 번들된 의존성을 각각 추가할 수 있습니다.)
 
 ```kotlin
 repositories {
@@ -105,11 +106,13 @@ var option = Argon2dPasswordEncoderOption.fromDefaultBuilder()
 var bcryptPasswordEncoder = factory.create(option);
 ```
 
-**Argon2d의 옵션은 Argon2id와 같은 항목을 같습니다.**
+**Argon2d의 옵션의 항목 종류는 Argon2id와 같습니다.**
 
 ## 패스워드 인코더 객체 캐싱
 
-패스워드 인코더 인스턴스를 캐싱합니다. ([Caffeine Cache](https://github.com/ben-manes/caffeine) 기반 팩토리)
+패스워드 인코더 인스턴스를 캐싱합니다. ([Caffeine Cache](https://github.com/ben-manes/caffeine) 기반 팩토리)  
+같은 옵션을 사용하면 캐싱된 인스턴스를 제공합니다.
+옵션 객체들의 참조가 달라도 내용이 서로 같으면 같은 옵션으로 인식합니다.
 
 **기본 생성자를 사용한 캐시 만료 기본값**
 
@@ -143,7 +146,8 @@ var factory = PasswordEncoderFactory.builder()
 ### 메서드 간 공유되는 캐시
 
 지금 데모 버전에서 사용하는 패스워드 인코더 인스턴스는 모두
-`PasswordEncoder` 인터페이스와 `CustomSaltingPasswordEncoder`를 동시에 구현합니다.
+`PasswordEncoder` 인터페이스와 `CustomSaltingPasswordEncoder`를 동시에 구현합니다.  
+같은 옵션을 사용하여 패스워드 인코더 인스턴스를 생성하면, 다음 두 메서드는 같은 인스턴스를 캐싱하여 반환합니다.
 
 ```java
 var factory = new PasswordEncoderFactory();
