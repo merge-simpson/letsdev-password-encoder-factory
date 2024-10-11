@@ -1,15 +1,16 @@
 package letsdev.core.password
 
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.*
+import io.kotest.matchers.types.*
 import io.mockk.every
 import io.mockk.mockk
 import letsdev.core.password.encoder.GeneralPasswordEncoderType
 import letsdev.core.password.encoder.GeneralPasswordEncoderType.Argon2Variant
 import letsdev.core.password.encoder.option.Argon2idPasswordEncoderOption
 import letsdev.core.password.encoder.option.BcryptPasswordEncoderOption
-import letsdev.core.password.encoder.port.NotCastedPasswordEncoder
 import java.util.concurrent.TimeUnit
-import kotlin.test.*
+// import kotlin.test.*
 
 class PasswordEncoderFactoryTest_Cache: StringSpec({
 
@@ -37,6 +38,7 @@ class PasswordEncoderFactoryTest_Cache: StringSpec({
             every { gain } returns 1.0f
             every { memoryInput } returns 93750
         }
+
         factory = PasswordEncoderFactory()
         factoryWithShortTtl = PasswordEncoderFactory.builder()
                 .expireAfterAccess(1, TimeUnit.NANOSECONDS)
@@ -50,14 +52,20 @@ class PasswordEncoderFactoryTest_Cache: StringSpec({
                 .build()
     }
 
-    "기본 팩토리 캐싱: 동일 객체를 가져온다." {
+    (
+            "기본 팩토리 캐싱: 동일한 옵션 객체를 제공하면 -> " +
+            "캐싱된 인코더 객체를 가져온다."
+    ) {
         val encoder1 = factory.create(bcryptOption)
         val encoder2 = factory.create(bcryptOption)
 
-        assertSame(encoder1, encoder2)
+        encoder1 shouldBeSameInstanceAs encoder2
     }
 
-    "캐시 Key 동일성: 옵션의 참조가 달라도 내용이 동일하면 객체를 가져온다." {
+    (
+            "캐시 Key 동일성: 참조가 다르고 내용이 같은 옵션 객체를 제공하면 -> " +
+            "캐싱된 인코더 객체를 가져온다."
+    ) {
         // 같은 내용을 갖는 서로 다른 옵션 생성
         val newBcryptOption1 = BcryptPasswordEncoderOption(bcryptOption.strength)
         val newBcryptOption2 = BcryptPasswordEncoderOption(bcryptOption.strength)
@@ -65,30 +73,32 @@ class PasswordEncoderFactoryTest_Cache: StringSpec({
         val encoder1 = factory.create(newBcryptOption1)
         val encoder2 = factory.create(newBcryptOption2)
 
-        assertSame(encoder1, encoder2)
+        encoder1 shouldBeSameInstanceAs encoder2
     }
 
-    "캐시 Key 동일성: PasswordEncoder 객체와 CustomSaltingPasswordEncoder 객체는 캐싱이 호환된다." {
+    (
+            "캐시 Key 동일성: 동일한 옵션 객체를 제공하면 -> " +
+             "PasswordEncoder 객체와 CustomSaltingPasswordEncoder 객체는 캐싱이 호환된다."
+    ) {
         val bcryptEncoder = factoryWithSmallSize.create(bcryptOption)
-        val customSaltingBcryptEncoder = factoryWithSmallSize.createCustomSaltingEncoder(bcryptOption)
+        val customSaltingBcryptEncoder =
+                factoryWithSmallSize.createCustomSaltingEncoder(bcryptOption)
 
-        assertSame(
-                bcryptEncoder as NotCastedPasswordEncoder,
-                customSaltingBcryptEncoder as NotCastedPasswordEncoder
-        )
+        bcryptEncoder shouldBeSameInstanceAs customSaltingBcryptEncoder
     }
 
-    "캐시 Key 동일성: 옵션의 참조가 달라도 내용이 같으면 PasswordEncoder, CustomSaltingPasswordEncoder 캐싱이 호환된다." {
+    (
+            "캐시 Key 동일성: 참조가 다르고 내용이 같은 옵션 객체를 제공하면 -> " +
+            "PasswordEncoder, CustomSaltingPasswordEncoder 캐싱이 호환된다."
+    ) {
         val newBcryptOption1 = BcryptPasswordEncoderOption(bcryptOption.strength)
         val newBcryptOption2 = BcryptPasswordEncoderOption(bcryptOption.strength)
 
         val bcryptEncoder = factoryWithSmallSize.create(newBcryptOption1)
-        val customSaltingBcryptEncoder = factoryWithSmallSize.createCustomSaltingEncoder(newBcryptOption2)
+        val customSaltingBcryptEncoder =
+                factoryWithSmallSize.createCustomSaltingEncoder(newBcryptOption2)
 
-        assertSame(
-                bcryptEncoder as NotCastedPasswordEncoder,
-                customSaltingBcryptEncoder as NotCastedPasswordEncoder
-        )
+        bcryptEncoder shouldBeSameInstanceAs customSaltingBcryptEncoder
     }
 
     "팩토리 빌더(시간): 입력한 시간 동안 캐싱이 된다." {
@@ -97,27 +107,27 @@ class PasswordEncoderFactoryTest_Cache: StringSpec({
         val encoder2 = factoryWithSmallSize.create(bcryptOption)
 
         // 객체가 캐싱되었는지
-        assertSame(encoder1, encoder2)
+        encoder1 shouldBeSameInstanceAs encoder2
     }
 
-    "시간(만료): 서로 다른 객체가 생성된다." {
+    "시간(만료): 시간이 만료되면 -> 캐싱되지 않은 새 객체가 생성된다." {
         // 짧은 수명을 가지는 팩토리 사용
         val encoder1 = factoryWithShortTtl.create(bcryptOption)
         Thread.sleep(1)
         val encoder2 = factoryWithShortTtl.create(bcryptOption)
 
         // 객체가 다르게 생성되었는지 검증
-        assertNotSame(encoder1, encoder2)
+        encoder1 shouldNotBeSameInstanceAs encoder2
     }
 
-    "사이즈: 사이즈를 1인 팩토리도 캐싱이 된다." {
+    "사이즈: 사이즈를 1인 팩토리를 사용해도 -> 하나는 캐싱이 된다." {
         val bcryptEncoder1 = factoryWithSmallSize.create(bcryptOption)
         val bcryptEncoder2 = factoryWithSmallSize.create(bcryptOption)
 
-        assertSame(bcryptEncoder1, bcryptEncoder2)
+        bcryptEncoder1 shouldBeSameInstanceAs bcryptEncoder2
     }
 
-    "사이즈(만료): 사이즈를 초과하면 오래된 객체가 삭제된다." {
+    "사이즈(만료): 팩토리 캐싱 사이즈를 초과하면 -> 오래된 객체가 삭제된다." {
         val bcryptEncoder1 = factoryWithSmallSize.create(bcryptOption)
         Thread.sleep(1)
         val argon2Encoder1 = factoryWithSmallSize.create(argon2IdOption)
@@ -127,8 +137,8 @@ class PasswordEncoderFactoryTest_Cache: StringSpec({
         val bcryptEncoder2 = factoryWithSmallSize.create(bcryptOption) // get new instance
 
         // 하나만 캐싱되므로 두 조건은 XOR 관계(!=)여야 함. (기존 걸 만료시키는지, 나중 걸 저장하지 않는지 모를 때)
-        assertTrue((bcryptEncoder1 == bcryptEncoder2) != (argon2Encoder1 == argon2Encoder2))
-        assertNotSame(bcryptEncoder1, bcryptEncoder2)
-        assertSame(argon2Encoder1, argon2Encoder2)
+        (bcryptEncoder1 == bcryptEncoder2) shouldNotBe (argon2Encoder1 == argon2Encoder2)
+        bcryptEncoder1 shouldNotBeSameInstanceAs bcryptEncoder2
+        argon2Encoder1 shouldBeSameInstanceAs argon2Encoder2
     }
 })

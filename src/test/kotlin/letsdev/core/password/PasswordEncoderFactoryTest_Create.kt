@@ -1,5 +1,8 @@
 package letsdev.core.password
 
+import io.kotest.matchers.booleans.*
+import io.kotest.matchers.*
+import io.kotest.matchers.types.*
 import io.mockk.every
 import io.mockk.mockk
 import letsdev.core.password.encoder.GeneralPasswordEncoderType
@@ -13,7 +16,6 @@ import letsdev.core.password.encoder.port.Argon2IdPasswordEncoder
 import letsdev.core.password.encoder.port.BCryptPasswordEncoder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import kotlin.test.assertTrue
 
 class PasswordEncoderFactoryTest_Create {
 
@@ -62,7 +64,8 @@ class PasswordEncoderFactoryTest_Create {
 
         val encoder = factory.create(option)
 
-        assertTrue(encoder is BCryptPasswordEncoder)
+        (encoder is BCryptPasswordEncoder).shouldBeTrue()
+        encoder should beInstanceOf<BCryptPasswordEncoder>()
     }
 
     @Test
@@ -74,7 +77,7 @@ class PasswordEncoderFactoryTest_Create {
 
         val encoder = factory.create(option)
 
-        assertTrue(encoder is Argon2IdPasswordEncoder)
+        encoder should beInstanceOf<Argon2IdPasswordEncoder>()
     }
 
     @Test
@@ -86,6 +89,6 @@ class PasswordEncoderFactoryTest_Create {
 
         val encoder = factory.create(option)
 
-        assertTrue(encoder is Argon2DPasswordEncoder)
+        encoder should beInstanceOf<Argon2DPasswordEncoder>()
     }
 }
