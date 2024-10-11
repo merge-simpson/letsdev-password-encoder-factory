@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "me.letsdev"
-version = "0.1.0"
+version = "0.1.1"
 
 java {
     toolchain {
@@ -37,7 +37,7 @@ dependencies {
     api("jakarta.annotation:jakarta.annotation-api")
 
     // error code
-    api("com.github.merge-simpson:letsdev-password-encoder-api:0.1.0")
+    api("com.github.merge-simpson:letsdev-password-encoder-api:$version")
 
     // spring crypto (password encoder delegator)
     api("org.springframework.security:spring-security-crypto")

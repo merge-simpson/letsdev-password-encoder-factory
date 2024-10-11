@@ -3,11 +3,11 @@
 ## Bundled
 
 - letsdev-password-encoder-api  
-  `com.github.merge-simpson:letsdev-password-encoder-api:${version}`
+  `com.github.merge-simpson:letsdev-password-encoder-api:0.1.1`
   - letsdev-password-encoder-port  
-    `com.github.merge-simpson:letsdev-password-encoder-port:${version}`
+    `com.github.merge-simpson:letsdev-password-encoder-port:0.1.1`
   - letsdev-password-encoder-exception  
-    `com.github.merge-simpson:letsdev-password-encoder-exception:${version}`
+    `com.github.merge-simpson:letsdev-password-encoder-exception:0.1.1`
 
 ## Installation
 
@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.merge-simpson:letsdev-password-encoder-factory:0.1.0") // added
+    implementation("com.github.merge-simpson:letsdev-password-encoder-factory:0.1.1") // added
 }
 ```
 
@@ -87,7 +87,7 @@ var bcryptPasswordEncoder = factory.create(option);
 
 - memoryInput: 입력한 메모리 비용
 - memory: 계산된 메모리 비용 (빌더는 이것 대신 위 파라미터를 입력하게 함.)
-    - memoryInput이 없을 때 m ≥ 93750 ÷ ((3 × t − 1) × α)  (단위: kB)
+  - memoryInput이 없을 때 m ≥ 93750 ÷ ((3 × t − 1) × α)  (단위: kB)
 - saltLength: 솔트 길이. 기본 값: 16 Byte
 - hashLength: 해시 길이. 기본 값: 32 Byte
 - parallelism: 병렬성. 기본값: 1
@@ -164,3 +164,64 @@ var customSaltingPasswordEncoder = factory.createCustomSaltingEncoder(argon2IdOp
 // 다음 결과를 기대할 수 있습니다.
 assertSame(passwordEncoder, customSaltingPasswordEncoder)
 ```
+
+# Properties (Not Automatically Applied)
+
+다음 프로퍼티 클래스의 객체를 빈으로 주입받아 사용할 수 있습니다.
+
+- `letsdev.core.password.property.PasswordEncoderProperties`
+
+이 구성 속성은 다음 항목들을 자동으로 바인딩할 수 있습니다. 모든 속성은 선택 사항입니다.
+
+```yaml
+# 작성된 것은 기본값입니다. 모든 속성은 선택적입니다.
+letsdev.password:
+    default-encoder: bcrypt
+    bcrypt:
+      strength: 10
+    argon2:
+      mode: argon2id
+      salt-length: 16 # Unit: Bytes
+      hash-length: 32 # Unit: Bytes
+      parallelism: 1
+      # memory-input: # 생략 시 자동으로 계산됩니다. 메모리 비용 m ≥ 93750 ÷ ((3 × parallelism − 1) × α)
+      iterations: 1
+      alpha: 0.95
+      memory-gain: 1.0
+```
+
+## Default Encoder Property
+
+기본 인코더를 설정할 수 있습니다. 이 버전에서 지원하는 목록은 다음과 같습니다.
+
+- `bcrypt`
+- `argon2`
+- `argon2d`
+- `argon2i`
+- `argon2id`
+
+## Bcrypt Encoder Properties
+
+- `strength`: 𝐒𝐭𝐫𝐞𝐧𝐠𝐭𝐡 = 𝐥𝐨𝐠₂(𝐫𝐞𝐩𝐞𝐭𝐢𝐭𝐢𝐨𝐧𝐬)  
+  반복 인자를 말합니다. Cost factor 또는 work factor 등으로도 부릅니다.
+
+## Argon2 Encoder Properties
+
+argon2 최종 memory cost는 `memory-input`과 `memory-gain`의 곱입니다.
+
+- `mode`
+  - Argon2의 세 버전(`argon2d`, `argon2i`, `argon2id`) 중 하나입니다.
+  - 기본값은 `argon2id`입니다.
+- `salt-length`
+- `hash-length`
+- `parallelism`
+- `iterations`
+- `alpha`
+  - 기본 목적은 `memory-input` 속성을 자동으로 계산할 때만 사용됩니다.
+  - 0 초과 1 이하의 값을 권하며, 적어도 0을 초과해야 합니다.
+  - Memory cost ≲ 64 MiB일 때 α ≈ 0.95 정도를 권합니다.
+  - Memory cost 값이 충분히 크면, 더 작은 α 값을 사용할 수 있습니다.
+- `memory-input`  
+  이 속성을 입력하면 `alpha` 속성을 무시합니다.
+- `memory-gain`  
+  메모리 비용에 대한 증폭계수입니다.
